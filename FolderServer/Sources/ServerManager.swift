@@ -14,10 +14,19 @@ struct SystemProcess: Identifiable {
     let port: Int
 }
 
+struct ServerError: Identifiable {
+    let id: UUID
+    let serverID: UUID
+    let message: String
+}
+
 class ServerManager: ObservableObject {
     @Published var servers: [Server] = []
     @Published var systemProcesses: [SystemProcess] = []
-    
+    @Published var lastError: ServerError?
+    private var processes: [UUID: Process] = [:]
+    private var healthTimer: Timer?
+
     private let savedServersKey = "savedServers"
     
     init() {
@@ -27,7 +36,22 @@ class ServerManager: ObservableObject {
     private func notifyServersChanged() {
         NotificationCenter.default.post(name: .serversDidChange, object: nil)
     }
-    
+
+    private func setError(serverID: UUID, message: String) {
+        let err = ServerError(id: UUID(), serverID: serverID, message: message)
+        if Thread.isMainThread {
+            lastError = err
+        } else {
+            DispatchQueue.main.async { self.lastError = err }
+        }
+    }
+
+    private func clearError(serverID: UUID) {
+        if lastError?.serverID == serverID {
+            lastError = nil
+        }
+    }
+
     func loadServers() {
         guard let data = UserDefaults.standard.data(forKey: savedServersKey),
               let saved = try? JSONDecoder().decode([Server].self, from: data) else {
@@ -108,21 +132,26 @@ class ServerManager: ObservableObject {
     
     func startServer(id: UUID) -> String? {
         guard let index = servers.firstIndex(where: { $0.id == id }) else {
+            setError(serverID: id, message: "Сервер не найден")
             return "Сервер не найден"
         }
-        
+
         let server = servers[index]
-        
+
         guard isPortAvailable(port: server.port) else {
-            return "Порт \(server.port) уже занят"
+            let msg = "Порт \(server.port) уже занят"
+            setError(serverID: id, message: msg)
+            return msg
         }
-        
+
         guard FileManager.default.fileExists(atPath: server.folderPath) else {
-            return "Папка не существует"
+            let msg = "Папка не существует"
+            setError(serverID: id, message: msg)
+            return msg
         }
-        
+
         let task = Process()
-        
+
         switch server.serverType {
         case .php:
             task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/php")
@@ -131,24 +160,41 @@ class ServerManager: ObservableObject {
             task.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
             task.arguments = ["-m", "http.server", String(server.port), "--directory", server.folderPath]
         }
-        
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = pipe
-        
+
+        task.standardOutput = FileHandle.nullDevice
+        task.standardError = FileHandle.nullDevice
+
+        task.terminationHandler = { [weak self] proc in
+            let endedPid = proc.processIdentifier
+            DispatchQueue.main.async {
+                guard let self = self,
+                      let idx = self.servers.firstIndex(where: { $0.id == id }) else { return }
+                if self.servers[idx].pid == endedPid {
+                    self.servers[idx].isRunning = false
+                    self.servers[idx].pid = nil
+                    self.processes[id] = nil
+                    self.saveServers()
+                }
+            }
+        }
+
         do {
             try task.run()
         } catch {
-            return "Не удалось запустить сервер: \(error.localizedDescription)"
+            let msg = "Не удалось запустить сервер: \(error.localizedDescription)"
+            setError(serverID: id, message: msg)
+            return msg
         }
-        
+
         servers[index].isRunning = true
         servers[index].pid = task.processIdentifier
+        processes[id] = task
+        clearError(serverID: id)
         saveServers()
-        
+
         return nil
     }
-    
+
     func stopServer(id: UUID) {
         guard let index = servers.firstIndex(where: { $0.id == id }) else { return }
         if let pid = servers[index].pid {
