@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var window: NSWindow!
     var serverManager: ServerManager!
     var statusItem: NSStatusItem!
@@ -27,7 +27,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.contentView = NSHostingView(rootView: contentView)
         window.minSize = NSSize(width: 520, height: 450)
         window.maxSize = NSSize(width: 520, height: 450)
-        window.makeKeyAndOrderFront(nil)
+        window.delegate = self
+        NSApp.setActivationPolicy(.accessory)
     }
     
     func setupStatusBar() {
@@ -55,6 +56,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             onOpenApp: { [weak self] in
                 self?.openApp()
                 self?.closePopover()
+            },
+            onQuit: { [weak self] in
+                self?.quitApp()
             }
         )
         popover.contentViewController = NSHostingController(rootView: popoverContent)
@@ -96,8 +100,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func openApp() {
+        NSApp.setActivationPolicy(.regular)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
     }
     
     @objc func quitApp() {
