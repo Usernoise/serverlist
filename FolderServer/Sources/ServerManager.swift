@@ -222,6 +222,43 @@ class ServerManager: ObservableObject {
         saveServers()
     }
 
+    func deleteServer(id: UUID) {
+        if let index = servers.firstIndex(where: { $0.id == id }),
+           servers[index].isRunning, let pid = servers[index].pid {
+            kill(pid, SIGTERM)
+        }
+        processes[id] = nil
+        servers.removeAll { $0.id == id }
+        if lastError?.serverID == id { lastError = nil }
+        saveServers()
+    }
+
+    func restartServer(id: UUID) {
+        guard let server = servers.first(where: { $0.id == id }) else {
+            setError(serverID: id, message: "Сервер не найден")
+            return
+        }
+        let port = server.port
+
+        if server.isRunning {
+            stopServer(id: id)
+        }
+
+        let deadline = Date().addingTimeInterval(2.0)
+
+        func attempt() {
+            if isPortAvailable(port: port) {
+                _ = startServer(id: id)
+            } else if Date() < deadline {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { attempt() }
+            } else {
+                setError(serverID: id, message: "Порт \(port) не освободился, перезапуск отменён")
+            }
+        }
+
+        attempt()
+    }
+
     func checkServerHealth(id: UUID) {
         guard let index = servers.firstIndex(where: { $0.id == id }),
               let pid = servers[index].pid else { return }
