@@ -31,6 +31,9 @@ class ServerManager: ObservableObject {
     
     init() {
         loadServers()
+        healthTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            self?.pollRunningServers()
+        }
     }
     
     private func notifyServersChanged() {
@@ -202,6 +205,7 @@ class ServerManager: ObservableObject {
         }
         servers[index].isRunning = false
         servers[index].pid = nil
+        processes[id] = nil
         saveServers()
     }
     func stopAllServers() {
@@ -214,22 +218,46 @@ class ServerManager: ObservableObject {
             servers[i].isRunning = false
             servers[i].pid = nil
         }
+        processes.removeAll()
         saveServers()
     }
-    
+
     func checkServerHealth(id: UUID) {
         guard let index = servers.firstIndex(where: { $0.id == id }),
               let pid = servers[index].pid else { return }
-        let result = kill(pid, 0)
-        if result != 0 {
+        if kill(pid, 0) != 0 {
             DispatchQueue.main.async {
-                self.servers[index].isRunning = false
-                self.servers[index].pid = nil
+                guard let idx = self.servers.firstIndex(where: { $0.id == id }) else { return }
+                self.servers[idx].isRunning = false
+                self.servers[idx].pid = nil
+                self.processes[id] = nil
                 self.saveServers()
             }
         }
     }
     
+    private func pollRunningServers() {
+        var deadIDs: [UUID] = []
+        for server in servers where server.isRunning {
+            if let pid = server.pid, kill(pid, 0) != 0 {
+                deadIDs.append(server.id)
+            }
+        }
+        guard !deadIDs.isEmpty else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            var changed = false
+            for id in deadIDs {
+                guard let i = self.servers.firstIndex(where: { $0.id == id }) else { continue }
+                self.servers[i].isRunning = false
+                self.servers[i].pid = nil
+                self.processes[id] = nil
+                changed = true
+            }
+            if changed { self.saveServers() }
+        }
+    }
+
     func scanSystemProcesses() {
         var processes: [SystemProcess] = []
         
