@@ -1,57 +1,66 @@
 import SwiftUI
+import AppKit
 
 struct StatusBarPopoverView: View {
     @ObservedObject var serverManager: ServerManager
     let onClose: () -> Void
     let onOpenApp: () -> Void
-    
+    let onQuit: () -> Void
+
     var body: some View {
         VStack(spacing: 0) {
+            header
+            Divider()
             serversList
             Divider()
-            actionButtons
+            footer
         }
         .frame(width: 320, height: 400)
     }
-    
+
+    private var header: some View {
+        HStack {
+            Text("ServerList")
+                .font(.system(size: 13, weight: .semibold))
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
     private var serversList: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 if serverManager.servers.isEmpty {
-                    VStack {
-                        Spacer()
+                    VStack(spacing: 6) {
                         Text("Нет серверов")
                             .foregroundColor(.secondary)
-                        Spacer()
+                        Text("Откройте окно, чтобы добавить сервер")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 200)
+                    .frame(maxWidth: .infinity, minHeight: 240)
                 } else {
                     ForEach(serverManager.servers) { server in
                         ServerPopoverRow(
                             server: server,
+                            errorMessage: serverManager.lastError?.serverID == server.id
+                                ? serverManager.lastError?.message
+                                : nil,
                             onToggle: {
                                 if server.isRunning {
-                                    self.serverManager.stopServer(id: server.id)
+                                    serverManager.stopServer(id: server.id)
                                 } else {
-                                    if self.serverManager.startServer(id: server.id) == nil {
-                                        NSWorkspace.shared.open(URL(string: "http://localhost:\(server.port)")!)
-                                    }
+                                    _ = serverManager.startServer(id: server.id)
                                 }
                             },
                             onRestart: {
-                                self.serverManager.stopServer(id: server.id)
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    _ = self.serverManager.startServer(id: server.id)
-                                }
+                                serverManager.restartServer(id: server.id)
                             },
                             onOpenBrowser: {
-                                NSWorkspace.shared.open(URL(string: "http://localhost:\(server.port)")!)
-                            },
-                            onOpenFolder: {
-                                NSWorkspace.shared.open(URL(fileURLWithPath: server.folderPath))
-                            },
-                            onDelete: {
-                                self.serverManager.servers.removeAll { $0.id == server.id }
+                                if let url = URL(string: "http://localhost:\(server.port)") {
+                                    NSWorkspace.shared.open(url)
+                                }
                             }
                         )
                         Divider()
@@ -60,14 +69,14 @@ struct StatusBarPopoverView: View {
             }
         }
     }
-    
-    private var actionButtons: some View {
+
+    private var footer: some View {
         HStack(spacing: 0) {
             Button(action: onOpenApp) {
                 HStack(spacing: 4) {
-                    Image(systemName: "square.grid.2x2")
+                    Image(systemName: "macwindow")
                         .font(.system(size: 12))
-                    Text("Открыть")
+                    Text("Открыть окно")
                         .font(.system(size: 12))
                 }
                 .foregroundColor(.secondary)
@@ -75,14 +84,14 @@ struct StatusBarPopoverView: View {
                 .padding(.vertical, 8)
             }
             .buttonStyle(.plain)
-            
+
             Divider()
-            
-            Button(action: onClose) {
+
+            Button(action: onQuit) {
                 HStack(spacing: 4) {
-                    Image(systemName: "xmark")
+                    Image(systemName: "power")
                         .font(.system(size: 12))
-                    Text("Закрыть")
+                    Text("Выход")
                         .font(.system(size: 12))
                 }
                 .foregroundColor(.secondary)
@@ -97,66 +106,67 @@ struct StatusBarPopoverView: View {
 
 struct ServerPopoverRow: View {
     let server: Server
+    let errorMessage: String?
     let onToggle: () -> Void
     let onRestart: () -> Void
     let onOpenBrowser: () -> Void
-    let onOpenFolder: () -> Void
-    let onDelete: () -> Void
-    
+
     var body: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(server.isRunning ? Color.green : Color.gray)
-                .frame(width: 8, height: 8)
-            
-            Text(server.name)
-                .font(.system(size: 13))
-                .lineLimit(1)
-            
-            Spacer()
-            
-            HStack(spacing: 6) {
-                if server.isRunning {
-                    Button(action: onOpenBrowser) {
-                        Image(systemName: "safari")
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(server.isRunning ? Color.green : Color.gray)
+                    .frame(width: 8, height: 8)
+
+                Text(server.name)
+                    .font(.system(size: 13))
+                    .lineLimit(1)
+
+                Text(":\(server.port)")
+                    .font(.system(size: 12))
+                    .foregroundColor(.blue)
+
+                Spacer()
+
+                HStack(spacing: 10) {
+                    if server.isRunning {
+                        Button(action: onRestart) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 12))
+                                .foregroundColor(.orange)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Перезапустить")
+
+                        Button(action: onOpenBrowser) {
+                            Image(systemName: "safari")
+                                .font(.system(size: 12))
+                                .foregroundColor(.blue)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Открыть в браузере")
+                    }
+
+                    Button(action: onToggle) {
+                        Image(systemName: server.isRunning ? "stop.fill" : "play.fill")
                             .font(.system(size: 12))
-                            .foregroundColor(.blue)
+                            .foregroundColor(server.isRunning ? .red : .green)
                     }
                     .buttonStyle(.plain)
-                    .help("Открыть в браузере")
-                    
-                    Button(action: onRestart) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 12))
-                            .foregroundColor(.orange)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Перезапустить")
+                    .help(server.isRunning ? "Остановить" : "Запустить")
                 }
-                
-                Button(action: onToggle) {
-                    Image(systemName: server.isRunning ? "stop.fill" : "play.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(server.isRunning ? .red : .green)
+            }
+
+            if let errorMessage = errorMessage {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(.orange)
+                    Text(errorMessage)
+                        .font(.system(size: 11))
+                        .foregroundColor(.orange)
+                        .lineLimit(2)
                 }
-                .buttonStyle(.plain)
-                .help(server.isRunning ? "Остановить" : "Запустить")
-                
-                Button(action: onOpenFolder) {
-                    Image(systemName: "folder")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-                .help("Открыть папку")
-                
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 12))
-                        .foregroundColor(.red)
-                }
-                .buttonStyle(.plain)
-                .help("Удалить")
             }
         }
         .padding(.horizontal, 12)
