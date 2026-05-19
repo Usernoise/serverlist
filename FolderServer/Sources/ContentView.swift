@@ -10,7 +10,8 @@ struct ContentView: View {
     @State private var serverType: ServerType = .php
     @State private var showFolderPicker: Bool = false
     @State private var showSystemProcesses: Bool = false
-    
+    @State private var editingServer: Server?
+
     var body: some View {
         VStack(spacing: 0) {
             formSection
@@ -19,6 +20,16 @@ struct ContentView: View {
         }
         .frame(width: 520, height: 450)
         .background(Color(NSColor.windowBackgroundColor))
+        .alert(item: $serverManager.lastError) { err in
+            Alert(
+                title: Text("Ошибка"),
+                message: Text(err.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+        .sheet(item: $editingServer) { server in
+            EditServerView(serverManager: serverManager, server: server)
+        }
     }
     
     private var formSection: some View {
@@ -82,6 +93,7 @@ struct ContentView: View {
                             server: server,
                             onStart: { _ = serverManager.startServer(id: server.id) },
                             onStop: { serverManager.stopServer(id: server.id) },
+                            onEdit: { editingServer = server },
                             onDelete: { deleteServer(id: server.id) }
                         )
                     }
@@ -101,7 +113,7 @@ struct ContentView: View {
     }
     
     private func deleteServer(id: UUID) {
-        serverManager.servers.removeAll { $0.id == id }
+        serverManager.deleteServer(id: id)
     }
 }
 
@@ -109,6 +121,7 @@ struct CompactServerRow: View {
     let server: Server
     let onStart: () -> Void
     let onStop: () -> Void
+    let onEdit: () -> Void
     let onDelete: () -> Void
     
     var body: some View {
@@ -148,7 +161,11 @@ struct CompactServerRow: View {
             .controlSize(.small)
             
             if server.isRunning {
-                Button(action: { NSWorkspace.shared.open(URL(string: "http://localhost:\(server.port)")!) }) {
+                Button(action: {
+                    if let url = URL(string: "http://localhost:\(server.port)") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
                     Image(systemName: "safari")
                         .font(.caption)
                 }
@@ -171,6 +188,13 @@ struct CompactServerRow: View {
                 .controlSize(.small)
             }
             
+            Button(action: onEdit) {
+                Image(systemName: "pencil")
+                    .font(.caption)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .font(.caption)
@@ -317,7 +341,11 @@ struct SystemProcessRowView: View {
                 .controlSize(.small)
             }
             
-            Button(action: { NSWorkspace.shared.open(URL(string: "http://localhost:\(process.port)")!) }) {
+            Button(action: {
+                if let url = URL(string: "http://localhost:\(process.port)") {
+                    NSWorkspace.shared.open(url)
+                }
+            }) {
                 Image(systemName: "safari")
             }
             .buttonStyle(.bordered)
@@ -331,5 +359,77 @@ struct SystemProcessRowView: View {
             .tint(.red)
         }
         .padding(.vertical, 2)
+    }
+}
+
+struct EditServerView: View {
+    @ObservedObject var serverManager: ServerManager
+    let server: Server
+    @Environment(\.dismiss) var dismiss
+
+    @State private var name: String
+    @State private var serverType: ServerType
+    @State private var folderPath: String
+    @State private var port: String
+
+    init(serverManager: ServerManager, server: Server) {
+        self.serverManager = serverManager
+        self.server = server
+        _name = State(initialValue: server.name)
+        _serverType = State(initialValue: server.serverType)
+        _folderPath = State(initialValue: server.folderPath)
+        _port = State(initialValue: String(server.port))
+    }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("Редактировать сервер")
+                .font(.headline)
+                .padding(.top)
+
+            Form {
+                TextField("Название", text: $name)
+                Picker("Тип", selection: $serverType) {
+                    ForEach(ServerType.allCases, id: \.self) { type in
+                        Text(type.rawValue).tag(type)
+                    }
+                }
+                HStack {
+                    TextField("Папка", text: $folderPath)
+                    Button("Обзор...") {
+                        let panel = NSOpenPanel()
+                        panel.canChooseFiles = false
+                        panel.canChooseDirectories = true
+                        panel.allowsMultipleSelection = false
+                        panel.canCreateDirectories = false
+                        if panel.runModal() == .OK, let url = panel.url {
+                            folderPath = url.path
+                        }
+                    }
+                }
+                TextField("Порт", text: $port)
+            }
+            .padding(.horizontal)
+
+            HStack {
+                Button("Отмена") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Сохранить") {
+                    guard let portNum = Int(port), portNum >= 1024, portNum <= 65535 else { return }
+                    serverManager.updateServer(
+                        id: server.id,
+                        name: name.isEmpty ? "Сервер" : name,
+                        serverType: serverType,
+                        folderPath: folderPath,
+                        port: portNum
+                    )
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(folderPath.isEmpty || port.isEmpty)
+            }
+            .padding(.bottom)
+        }
+        .frame(width: 420, height: 280)
     }
 }
