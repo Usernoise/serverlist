@@ -139,6 +139,7 @@ struct ServerPopoverRow: View {
                                 .foregroundColor(.orange)
                         }
                         .buttonStyle(.plain)
+                        .focusable(false)
                         .help("Перезапустить")
 
                         Button(action: onOpenBrowser) {
@@ -147,6 +148,7 @@ struct ServerPopoverRow: View {
                                 .foregroundColor(.blue)
                         }
                         .buttonStyle(.plain)
+                        .focusable(false)
                         .help("Открыть в браузере")
                     }
 
@@ -156,6 +158,7 @@ struct ServerPopoverRow: View {
                             .foregroundColor(server.isRunning ? .red : .green)
                     }
                     .buttonStyle(.plain)
+                    .focusable(false)
                     .help(server.isRunning ? "Остановить" : "Запустить")
                 }
             }

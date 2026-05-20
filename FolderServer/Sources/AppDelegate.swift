@@ -27,6 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.contentView = NSHostingView(rootView: contentView)
         window.minSize = NSSize(width: 520, height: 450)
         window.maxSize = NSSize(width: 520, height: 450)
+        window.isReleasedWhenClosed = false
         window.delegate = self
         NSApp.setActivationPolicy(.accessory)
     }

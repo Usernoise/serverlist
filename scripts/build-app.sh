@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_DIR="$ROOT_DIR/FolderServer"
 APP_DIR="$ROOT_DIR/dist/ServerList.app"
+ZIP_PATH="$ROOT_DIR/dist/ServerList.zip"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
@@ -11,6 +12,7 @@ RESOURCES_DIR="$CONTENTS_DIR/Resources"
 swift build --package-path "$PROJECT_DIR" -c release
 
 rm -rf "$APP_DIR"
+rm -f "$ZIP_PATH"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
 cp "$PROJECT_DIR/.build/release/ServerList" "$MACOS_DIR/ServerList"
@@ -19,4 +21,11 @@ cp "$PROJECT_DIR/Resources/App.icns" "$RESOURCES_DIR/App.icns"
 
 chmod +x "$MACOS_DIR/ServerList"
 
+xattr -cr "$APP_DIR" 2>/dev/null || true
+(
+    cd "$ROOT_DIR/dist"
+    COPYFILE_DISABLE=1 zip -qry -X "ServerList.zip" "ServerList.app"
+)
+
 echo "Built $APP_DIR"
+echo "Built $ZIP_PATH"

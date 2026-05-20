@@ -1,63 +1,67 @@
 # ServerList
 
-ServerList is a small macOS menu bar app for starting and stopping local development servers from selected folders.
+ServerList - небольшое приложение для macOS в строке меню. Оно запускает и останавливает локальные серверы разработки из выбранных папок.
 
-It supports:
+## Скачать
 
-- PHP built-in server: `php -S localhost:<port> -t <folder>`
-- Python static server: `python3 -m http.server <port> --directory <folder>`
-- menu bar quick actions: start, stop, restart, and open in browser
-- saved server profiles in macOS `UserDefaults`
-- detection of already running local PHP/Python server processes
+[Скачать последнюю версию ServerList.zip](../../releases/latest/download/ServerList.zip)
 
-The interface is currently in Russian.
+После скачивания:
 
-## Requirements
+1. Распакуйте `ServerList.zip`.
+2. Перенесите `ServerList.app` в папку `Applications`.
+3. Запустите приложение. Иконка появится в строке меню macOS.
 
-- macOS 12 or newer
-- Swift 5.9 or newer
-- Xcode Command Line Tools
-- Python 3 at `/usr/bin/python3`
-- PHP at `/opt/homebrew/bin/php` for PHP servers
+Если macOS предупреждает, что приложение не удалось проверить, откройте `System Settings` -> `Privacy & Security` и разрешите запуск вручную.
 
-Install command line tools if needed:
+## Возможности
+
+- Запуск встроенного PHP-сервера: `php -S localhost:<port> -t <folder>`.
+- Запуск статического Python-сервера: `python3 -m http.server <port> --directory <folder>`.
+- Быстрые действия из строки меню: запуск, остановка, перезапуск и открытие в браузере.
+- Сохранение профилей серверов в macOS `UserDefaults`.
+- Обнаружение уже запущенных локальных PHP/Python-серверов.
+
+Интерфейс приложения сейчас на русском языке.
+
+## Требования
+
+- macOS 12 или новее.
+- Python 3 по пути `/usr/bin/python3`.
+- PHP по пути `/opt/homebrew/bin/php`, если нужны PHP-серверы.
+
+## Сборка из исходников
+
+Этот раздел нужен только разработчикам. Если вы просто хотите пользоваться приложением, скачайте готовый архив из раздела [Скачать](#скачать).
+
+Установите Xcode Command Line Tools:
 
 ```bash
 xcode-select --install
 ```
 
-## Build
-
-Build the executable:
-
-```bash
-cd FolderServer
-swift build -c release
-```
-
-Build a macOS `.app` bundle into `dist/`:
+Соберите приложение:
 
 ```bash
 ./scripts/build-app.sh
 ```
 
-Run the app:
+Готовые файлы появятся здесь:
+
+```text
+dist/ServerList.app
+dist/ServerList.zip
+```
+
+Запуск локальной сборки:
 
 ```bash
 open dist/ServerList.app
 ```
 
-## Development
+## Разработка
 
-Generate an Xcode project with XcodeGen:
-
-```bash
-cd FolderServer
-xcodegen generate
-open ServerList.xcodeproj
-```
-
-Or work directly with SwiftPM:
+Работа напрямую через SwiftPM:
 
 ```bash
 cd FolderServer
@@ -65,12 +69,20 @@ swift build
 swift run ServerList
 ```
 
-## Notes
+Генерация Xcode-проекта через XcodeGen:
 
-ServerList is a menu bar agent. It starts without a Dock icon and opens the main window from the menu bar popover.
+```bash
+cd FolderServer
+xcodegen generate
+open ServerList.xcodeproj
+```
 
-PHP path detection is not automatic yet. On Apple Silicon Macs with Homebrew PHP, `/opt/homebrew/bin/php` is expected.
+## Примечания
 
-## License
+ServerList работает как menu bar app: приложение запускается без иконки в Dock, а главное окно открывается из выпадающего меню в строке меню.
+
+Автоматический поиск PHP пока не реализован. На Mac с Apple Silicon и Homebrew ожидается путь `/opt/homebrew/bin/php`.
+
+## Лицензия
 
 MIT
