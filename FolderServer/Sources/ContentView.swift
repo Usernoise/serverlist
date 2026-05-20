@@ -33,44 +33,50 @@ struct ContentView: View {
     }
     
     private var formSection: some View {
-        HStack(spacing: 8) {
-            TextField("Название", text: $serverName)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 100)
-            
-            Button(action: { showFolderPicker = true }) {
-                Image(systemName: "folder")
-            }
-            .buttonStyle(.bordered)
-            
-            Picker("", selection: $serverType) {
-                ForEach(ServerType.allCases, id: \.self) { type in
-                    Text(type.rawValue).tag(type)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Создать сервер:")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.secondary)
+
+            HStack(spacing: 8) {
+                TextField("Название", text: $serverName)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 100)
+                
+                Button(action: { showFolderPicker = true }) {
+                    Image(systemName: "folder")
                 }
+                .buttonStyle(.bordered)
+                
+                Picker("", selection: $serverType) {
+                    ForEach(ServerType.allCases, id: \.self) { type in
+                        Text(type.rawValue).tag(type)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 90)
+                
+                TextField("Port", text: $port)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 60)
+                
+                Button(action: addServer) {
+                    Image(systemName: "plus")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(folderPath.isEmpty || port.isEmpty)
+                
+                Spacer()
+                
+                Button(action: { showSystemProcesses = true; serverManager.scanSystemProcesses() }) {
+                    Image(systemName: "list.bullet")
+                }
+                .buttonStyle(.bordered)
             }
-            .labelsHidden()
-            .frame(width: 90)
-            
-            TextField("Port", text: $port)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 60)
-            
-            Button(action: addServer) {
-                Image(systemName: "plus")
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(folderPath.isEmpty || port.isEmpty)
-            
-            Spacer()
-            
-            Button(action: { showSystemProcesses = true; serverManager.scanSystemProcesses() }) {
-                Image(systemName: "list.bullet")
-            }
-            .buttonStyle(.bordered)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .padding(.top, 15)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
         .sheet(isPresented: $showFolderPicker) {
             FolderPickerView(folderPath: $folderPath)
         }
