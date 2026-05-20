@@ -68,6 +68,7 @@ struct StatusBarPopoverView: View {
                     }
                 }
             }
+            .padding(.trailing, 12)
         }
         .frame(maxHeight: 360)
     }
