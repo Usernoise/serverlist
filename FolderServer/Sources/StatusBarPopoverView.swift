@@ -15,7 +15,8 @@ struct StatusBarPopoverView: View {
             Divider()
             footer
         }
-        .frame(width: 320, height: 400)
+        .frame(width: 320)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var header: some View {
@@ -39,7 +40,7 @@ struct StatusBarPopoverView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 240)
+                    .frame(maxWidth: .infinity, minHeight: 140)
                 } else {
                     ForEach(serverManager.servers) { server in
                         ServerPopoverRow(
@@ -68,6 +69,7 @@ struct StatusBarPopoverView: View {
                 }
             }
         }
+        .frame(maxHeight: 360)
     }
 
     private var footer: some View {
@@ -122,7 +124,7 @@ struct ServerPopoverRow: View {
                     .font(.system(size: 13))
                     .lineLimit(1)
 
-                Text(":\(server.port)")
+                Text(":" + String(server.port))
                     .font(.system(size: 12))
                     .foregroundColor(.blue)
 

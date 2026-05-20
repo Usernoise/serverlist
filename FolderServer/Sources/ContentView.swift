@@ -149,7 +149,7 @@ struct CompactServerRow: View {
                 .background(Color.blue.opacity(0.15))
                 .cornerRadius(3)
             
-            Text(":\(server.port)")
+            Text(":" + String(server.port))
                 .font(.caption)
                 .foregroundColor(.blue)
             
@@ -318,7 +318,7 @@ struct SystemProcessRowView: View {
                 HStack(spacing: 4) {
                     Text(process.name)
                         .font(.subheadline)
-                    Text(":\(process.port)")
+                    Text(":" + String(process.port))
                         .font(.caption)
                         .foregroundColor(.blue)
                 }
