@@ -79,7 +79,7 @@ struct StatusBarPopoverView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "macwindow")
                         .font(.system(size: 12))
-                    Text("Открыть окно")
+                    Text("Открыть приложение")
                         .font(.system(size: 12))
                 }
                 .foregroundColor(.secondary)
@@ -87,6 +87,7 @@ struct StatusBarPopoverView: View {
                 .padding(.vertical, 8)
             }
             .buttonStyle(.plain)
+            .focusable(false)
 
             Divider()
 
@@ -102,6 +103,7 @@ struct StatusBarPopoverView: View {
                 .padding(.vertical, 8)
             }
             .buttonStyle(.plain)
+            .focusable(false)
         }
         .background(Color(NSColor.windowBackgroundColor))
     }
