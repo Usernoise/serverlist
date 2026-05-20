@@ -75,7 +75,7 @@ struct ContentView: View {
             }
         }
         .padding(.horizontal, 12)
-        .padding(.top, 12)
+        .padding(.top, 18)
         .padding(.bottom, 10)
         .sheet(isPresented: $showFolderPicker) {
             FolderPickerView(folderPath: $folderPath)
