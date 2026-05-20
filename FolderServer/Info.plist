@@ -22,8 +22,8 @@
     <string>App.icns</string>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
-    <key>NSHumanReadableCopyright</key>
-    <string>Copyright 2024. All rights reserved.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright 2026 usernoise. Released under the MIT License.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
     <key>NSHighResolutionCapable</key>
