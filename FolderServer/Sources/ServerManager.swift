@@ -99,6 +99,11 @@ class ServerManager: ObservableObject {
         servers[index].port = port
         saveServers()
     }
+
+    func moveServers(fromOffsets source: IndexSet, toOffset destination: Int) {
+        servers.move(fromOffsets: source, toOffset: destination)
+        saveServers()
+    }
     
     private func saveServers() {
         if let data = try? JSONEncoder().encode(servers) {

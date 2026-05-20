@@ -103,6 +103,7 @@ struct ContentView: View {
                             onDelete: { deleteServer(id: server.id) }
                         )
                     }
+                    .onMove(perform: serverManager.moveServers)
                 }
                 .listStyle(.plain)
             }
