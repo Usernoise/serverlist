@@ -1,6 +1,12 @@
 import SwiftUI
 import AppKit
 
+private enum PopoverColors {
+    static let background = Color(NSColor(calibratedWhite: 0.88, alpha: 1.0))
+    static let rowBackground = Color(NSColor(calibratedWhite: 0.98, alpha: 1.0))
+    static let footerBackground = Color(NSColor(calibratedWhite: 0.93, alpha: 1.0))
+}
+
 struct StatusBarPopoverView: View {
     @ObservedObject var serverManager: ServerManager
     let onClose: () -> Void
@@ -17,6 +23,7 @@ struct StatusBarPopoverView: View {
         }
         .frame(width: 320)
         .fixedSize(horizontal: false, vertical: true)
+        .background(PopoverColors.background)
     }
 
     private var header: some View {
@@ -27,6 +34,7 @@ struct StatusBarPopoverView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        .background(PopoverColors.background)
     }
 
     private var serversList: some View {
@@ -70,6 +78,7 @@ struct StatusBarPopoverView: View {
             }
         }
         .frame(maxHeight: 360)
+        .background(PopoverColors.background)
     }
 
     private var footer: some View {
@@ -85,26 +94,26 @@ struct StatusBarPopoverView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
             }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
             .buttonStyle(.plain)
             .focusable(false)
 
             Divider()
 
             Button(action: onQuit) {
-                HStack(spacing: 4) {
-                    Image(systemName: "power")
-                        .font(.system(size: 12))
-                    Text("Выход")
-                        .font(.system(size: 12))
-                }
+                Image(systemName: "power")
+                    .font(.system(size: 14))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
                 .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
             }
+            .frame(width: 56)
+            .contentShape(Rectangle())
             .buttonStyle(.plain)
             .focusable(false)
         }
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(PopoverColors.footerBackground)
     }
 }
 
@@ -179,6 +188,6 @@ struct ServerPopoverRow: View {
         .padding(.leading, 12)
         .padding(.trailing, 28)
         .padding(.vertical, 10)
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(PopoverColors.rowBackground)
     }
 }
