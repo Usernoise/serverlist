@@ -76,8 +76,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func showPopover() {
         if let button = statusItem.button {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            NSApp.activate(ignoringOtherApps: true)
             DispatchQueue.main.async { [weak self] in
-                self?.popover.contentViewController?.view.window?.makeFirstResponder(nil)
+                guard let window = self?.popover.contentViewController?.view.window else { return }
+                window.makeKey()
+                window.makeFirstResponder(nil)
             }
             setupEventMonitor()
         }
