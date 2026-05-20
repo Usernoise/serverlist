@@ -68,7 +68,6 @@ struct StatusBarPopoverView: View {
                     }
                 }
             }
-            .padding(.trailing, 12)
         }
         .frame(maxHeight: 360)
     }
@@ -177,7 +176,8 @@ struct ServerPopoverRow: View {
                 }
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.leading, 12)
+        .padding(.trailing, 28)
         .padding(.vertical, 10)
         .background(Color(NSColor.controlBackgroundColor))
     }
