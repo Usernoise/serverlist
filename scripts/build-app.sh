@@ -21,6 +21,7 @@ cp "$PROJECT_DIR/Resources/App.icns" "$RESOURCES_DIR/App.icns"
 
 chmod +x "$MACOS_DIR/ServerList"
 
+codesign --force --sign - "$APP_DIR"
 xattr -cr "$APP_DIR" 2>/dev/null || true
 (
     cd "$ROOT_DIR/dist"
